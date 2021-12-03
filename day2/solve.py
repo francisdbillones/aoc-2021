@@ -44,7 +44,7 @@ def part2():
         elif com == "down":
             aim += mag
     print(hor * dep)
-
+    og_print(hor, dep)
 
 part1()
 part2()
