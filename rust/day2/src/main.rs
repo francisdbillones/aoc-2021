@@ -3,11 +3,11 @@ use std::fs;
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Couldn't read input.txt");
 
-    day1(&input);
-    day2(&input);
+    part1(&input);
+    part2(&input);
 }
 
-fn day1(input: &str) {
+fn part1(input: &str) {
     let mut x: i32 = 0;
     let mut y: i32 = 0;
     for (instruction, mag) in input
@@ -26,7 +26,7 @@ fn day1(input: &str) {
     fs::write("output/part1.txt", (x * y).abs().to_string()).expect("Failed to write to part1.txt");
 }
 
-fn day2(input: &str) {
+fn part2(input: &str) {
     let mut x: i32 = 0;
     let mut y: i32 = 0;
     let mut aim: i32 = 0;
