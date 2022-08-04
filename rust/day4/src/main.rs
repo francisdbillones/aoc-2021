@@ -9,8 +9,8 @@ struct Board {
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Couldn't read input.txt");
 
-    println!("{}", part1(&input));
-    println!("{}", part2(&input));
+    println!("Part1: {}", part1(&input));
+    println!("Part2: {}", part2(&input));
 }
 
 fn part1(input: &str) -> u32 {

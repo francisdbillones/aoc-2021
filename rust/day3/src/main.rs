@@ -3,11 +3,11 @@ use std::fs;
 fn main() {
     let input = fs::read_to_string("input.txt").expect("Couldn't read input.txt");
 
-    part1(&input);
-    part2(&input);
+    println!("Part1: {}", part1(&input));
+    println!("Part2: {}", part2(&input));
 }
 
-fn part1(input: &str) {
+fn part1(input: &str) -> u32 {
     let nbits = input.lines().next().unwrap().len();
 
     let counter = input
@@ -38,14 +38,10 @@ fn part1(input: &str) {
         })
         .collect::<Vec<bool>>();
 
-    fs::write(
-        "output/part1.txt",
-        (vec_to_n(gamma) * vec_to_n(epsilon)).to_string(),
-    )
-    .expect("Failed to write to output/part1.txt");
+    return vec_to_n(gamma) * vec_to_n(epsilon);
 }
 
-fn part2(input: &str) {
+fn part2(input: &str) -> u32 {
     let nbits = input.lines().next().unwrap().len();
 
     let bytes = input
@@ -64,8 +60,7 @@ fn part2(input: &str) {
     let o2_rating = vec_to_n(o2(&bytes, nbits));
     let co2_rating = vec_to_n(co2(&bytes, nbits));
 
-    fs::write("output/part2.txt", (o2_rating * co2_rating).to_string())
-        .expect("Failed to write to output/part2.txt");
+    return o2_rating * co2_rating;
 }
 
 fn o2(bytes: &Vec<Vec<bool>>, nbits: usize) -> Vec<bool> {
