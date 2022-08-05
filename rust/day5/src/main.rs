@@ -1,3 +1,6 @@
+mod models;
+use models::line::{Line, Point};
+
 use std::fs;
 
 fn main() {
@@ -5,71 +8,6 @@ fn main() {
 
     println!("Part1: {}", part1(&input));
     println!("Part2: {}", part2(&input));
-}
-
-struct Point {
-    x: usize,
-    y: usize,
-}
-
-struct Line {
-    start: Point,
-    stop: Point,
-}
-
-impl Line {
-    fn draw(&self, grid: &mut Vec<Vec<u32>>, check_diagonal: bool) {
-        if self.is_horizontal() {
-            let y = self.start.y;
-            for x in self.start.x..self.stop.x + 1 {
-                grid[y][x] += 1;
-            }
-        }
-
-        if self.is_vertical() {
-            let x = self.start.x;
-            for y in self.start.y..self.stop.y + 1 {
-                grid[y][x] += 1;
-            }
-        }
-
-        if check_diagonal && self.is_diagonal() {
-            // if start x and stop y are the same, then so is start y and stop x
-            let rev_x: bool = self.start.x > self.stop.x;
-            let rev_y: bool = self.start.y > self.stop.y;
-
-            for (x, y) in itertools::zip(
-                {
-                    if !rev_x {
-                        itertools::Either::Left(self.start.x..=self.stop.x)
-                    } else {
-                        itertools::Either::Right((self.stop.x..=self.start.x).rev())
-                    }
-                },
-                {
-                    if !rev_y {
-                        itertools::Either::Left(self.start.y..=self.stop.y)
-                    } else {
-                        itertools::Either::Right((self.stop.y..=self.start.y).rev())
-                    }
-                },
-            ) {
-                grid[y][x] += 1;
-            }
-        }
-    }
-
-    fn is_diagonal(&self) -> bool {
-        return (!self.is_horizontal()) && (!self.is_vertical());
-    }
-
-    fn is_horizontal(&self) -> bool {
-        return self.start.y == self.stop.y;
-    }
-
-    fn is_vertical(&self) -> bool {
-        return self.start.x == self.stop.x;
-    }
 }
 
 fn part1(input: &str) -> u32 {
