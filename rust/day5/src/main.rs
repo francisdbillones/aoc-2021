@@ -27,17 +27,13 @@ fn part1(input: &str) -> u32 {
         line.draw(&mut grid, false);
     }
 
-    let mut overlap = 0;
+    let overlap = grid
+        .iter()
+        .flat_map(|r| r.iter())
+        .filter(|c| (**c) >= 2)
+        .count();
 
-    for row in grid.iter() {
-        for col in row.iter() {
-            if *col >= 2 {
-                overlap += 1;
-            }
-        }
-    }
-
-    return overlap;
+    return overlap as u32;
 }
 
 fn part2(input: &str) -> u32 {
@@ -53,17 +49,13 @@ fn part2(input: &str) -> u32 {
         line.draw(&mut grid, true);
     }
 
-    let mut overlap = 0;
+    let overlap = grid
+        .iter()
+        .flat_map(|r| r.iter())
+        .filter(|c| (**c) >= 2)
+        .count();
 
-    for row in grid.iter() {
-        for col in row.iter() {
-            if *col >= 2 {
-                overlap += 1;
-            }
-        }
-    }
-
-    return overlap;
+    return overlap as u32;
 }
 
 fn parse_line(line: &str) -> Line {
