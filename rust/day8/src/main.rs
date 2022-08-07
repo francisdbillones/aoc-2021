@@ -130,13 +130,18 @@ fn solve_system(signal: &[String]) -> HashMap<char, char> {
     let zero = length_to_signal[&6]
         .iter()
         .find(|segment| {
-            !(segment.symmetric_difference(nine).count() == 0
+            !(segment
+                .symmetric_difference(nine)
+                .peekable()
+                .peek()
+                .is_none()
                 || one
                     .intersection(&HashSet::from_iter(
                         nine.symmetric_difference(*segment).copied(),
                     ))
-                    .count()
-                    != 0)
+                    .peekable()
+                    .peek()
+                    .is_some())
         })
         .unwrap();
 
@@ -153,8 +158,16 @@ fn solve_system(signal: &[String]) -> HashMap<char, char> {
     let six = length_to_signal[&6]
         .iter()
         .find(|segment| {
-            segment.symmetric_difference(nine).count() != 0
-                && segment.symmetric_difference(zero).count() != 0
+            segment
+                .symmetric_difference(nine)
+                .peekable()
+                .peek()
+                .is_some()
+                && segment
+                    .symmetric_difference(zero)
+                    .peekable()
+                    .peek()
+                    .is_some()
         })
         .unwrap();
 
