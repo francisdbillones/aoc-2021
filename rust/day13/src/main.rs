@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::fs;
 
 fn main() {
@@ -8,18 +9,20 @@ fn main() {
 }
 
 #[derive(Debug, Copy, Clone)]
-enum Axis {
-    X,
-    Y,
+enum Instruction {
+    X(usize),
+    Y(usize),
 }
 
 fn part1(input: &str) -> u32 {
     let (mut marks, instructions) = parse(input);
 
-    for &(axis, n) in instructions.iter().take(1) {
-        marks = match axis {
-            Axis::X => fold_x(&marks, n),
-            Axis::Y => fold_y(&marks, n),
+    for ins in instructions.iter().take(1) {
+        let (height, width) = (marks.len(), marks[0].len());
+
+        marks = match ins {
+            Instruction::X(n) => fold_x(&marks, *n, height, width),
+            Instruction::Y(n) => fold_y(&marks, *n, height, width),
         };
     }
 
@@ -29,10 +32,12 @@ fn part1(input: &str) -> u32 {
 fn part2(input: &str) -> u32 {
     let (mut marks, instructions) = parse(input);
 
-    for &(axis, n) in &instructions {
-        marks = match axis {
-            Axis::X => fold_x(&marks, n),
-            Axis::Y => fold_y(&marks, n),
+    for ins in instructions.iter() {
+        let (height, width) = (marks.len(), marks[0].len());
+
+        marks = match ins {
+            Instruction::X(n) => fold_x(&marks, *n, height, width),
+            Instruction::Y(n) => fold_y(&marks, *n, height, width),
         };
     }
 
@@ -42,84 +47,90 @@ fn part2(input: &str) -> u32 {
         println!("{}", chars);
     }
 
-    marks.iter().flatten().map(|&n| n as usize).sum::<usize>() as u32
+    0
 }
 
-fn fold_x(marks: &[Vec<bool>], n: usize) -> Vec<Vec<bool>> {
-    let (height, width) = (marks.len(), marks[0].len());
-
-    let (new_height, new_width) = (height, (width - 1) / 2);
-
-    let mut folded_marks = vec![vec![false; new_width]; new_height];
-
-    for i in 0..new_height {
-        for j in 0..new_width {
-            folded_marks[i][j] = marks[i][j] || marks[i][width - j - 1];
-        }
-    }
-
-    folded_marks
-}
-
-fn fold_y(marks: &[Vec<bool>], n: usize) -> Vec<Vec<bool>> {
-    let (height, width) = (marks.len(), marks[0].len());
-
-    let (new_height, new_width) = ((height - 1) / 2, width);
-
-    let mut folded_marks = vec![vec![false; new_width]; new_height];
-
-    for i in 0..new_height {
-        for j in 0..new_width {
-            folded_marks[i][j] = marks[i][j] || marks[height - i - 1][j];
-        }
-    }
-
-    folded_marks
-}
-
-fn parse(input: &str) -> (Vec<Vec<bool>>, Vec<(Axis, usize)>) {
-    let lines = input.lines();
-
-    let coords: Vec<(usize, usize)> = lines
-        .to_owned()
-        .take_while(|s| !s.is_empty())
-        .map(|s| {
-            let (x, y) = s.split_once(',').expect("Couldn't parse input");
-
-            let x = x.parse::<usize>().expect("Couldn't parse input");
-            let y = y.parse::<usize>().expect("Couldn't parse input");
-
-            (x, y)
-        })
+fn fold_x(marks: &[Vec<bool>], n: usize, height: usize, width: usize) -> Vec<Vec<bool>> {
+    let points: Vec<(usize, usize)> = (0..height)
+        .cartesian_product(0..n)
+        .filter(|&(i, j)| marks[i][j] || marks[i][width - j - 1])
         .collect();
 
-    let instructions: Vec<(Axis, usize)> = lines
-        .skip(coords.len() + 1)
-        .map(|s| {
-            let s = s.chars().skip("fold along ".len()).collect::<String>();
+    make_marks(&points, height, n)
+}
 
-            let (axis, n) = s.split_once('=').expect("Couldn't parse input");
+fn fold_y(marks: &[Vec<bool>], n: usize, height: usize, width: usize) -> Vec<Vec<bool>> {
+    let points: Vec<(usize, usize)> = (0..n)
+        .cartesian_product(0..width)
+        .filter(|&(i, j)| marks[i][j] || marks[height - i - 1][j])
+        .collect();
 
-            let axis = match axis {
-                "x" => Axis::X,
-                "y" => Axis::Y,
-                _ => panic!("Couldn't parse input"),
-            };
+    make_marks(&points, n, width)
+}
+
+fn make_marks(coords: &Vec<(usize, usize)>, height: usize, width: usize) -> Vec<Vec<bool>> {
+    let mut marks: Vec<Vec<bool>> = vec![vec![false; width]; height];
+
+    for &(j, i) in coords {
+        marks[j][i] = true;
+    }
+
+    marks
+}
+
+fn parse(input: &str) -> (Vec<Vec<bool>>, Vec<Instruction>) {
+    let lines = input.lines();
+
+    let mut coords: Vec<(usize, usize)> = Vec::new();
+    let mut instructions: Vec<Instruction> = Vec::new();
+
+    lines.for_each(|line| {
+        if line.starts_with('f') {
+            let line = line.chars().skip("fold along ".len()).collect::<String>();
+
+            let (axis, n) = line.split_once('=').expect("Couldn't parse input");
 
             let n = n.parse::<usize>().expect("Couldn't parse input");
 
-            (axis, n)
+            let ins = match axis {
+                "x" => Instruction::X(n),
+                "y" => Instruction::Y(n),
+                _ => panic!("Couldn't parse input"),
+            };
+
+            instructions.push(ins);
+        } else if !line.is_empty() {
+            let (x, y) = line.split_once(',').expect("Couldn't parse input");
+            let x = x.parse::<usize>().expect("Couldn't parse input");
+            let y = y.parse::<usize>().expect("Couldn't parse input");
+
+            coords.push((y, x));
+        }
+    });
+
+    let mat_width = instructions
+        .iter()
+        .map(|ins| match ins {
+            Instruction::X(x) => *x,
+            _ => 0,
         })
-        .collect();
+        .max()
+        .unwrap()
+        * 2
+        + 1;
 
-    let mat_width = coords.iter().map(|&(x, _)| x).max().unwrap() + 1;
-    let mat_height = coords.iter().map(|&(_, y)| y).max().unwrap() + 1;
+    let mat_height = instructions
+        .iter()
+        .map(|ins| match ins {
+            Instruction::Y(y) => *y,
+            _ => 0,
+        })
+        .max()
+        .unwrap()
+        * 2
+        + 1;
 
-    let mut marks = vec![vec![false; mat_width]; mat_height];
-
-    for (j, i) in coords {
-        marks[i][j] = true;
-    }
+    let marks = make_marks(&coords, mat_height, mat_width);
 
     (marks, instructions)
 }
