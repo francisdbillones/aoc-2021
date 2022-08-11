@@ -23,7 +23,7 @@ fn part1(input: &str) -> usize {
 
     (0..10).for_each(|_| apply_rules(&mut template, &rules));
 
-    (template.counts.values().max().unwrap() - template.counts.values().min().unwrap()) as usize
+    template.counts.values().max().unwrap() - template.counts.values().min().unwrap()
 }
 
 fn part2(input: &str) -> usize {
@@ -31,8 +31,7 @@ fn part2(input: &str) -> usize {
 
     (0..40).for_each(|_| apply_rules(&mut template, &rules));
 
-    dbg!((template.counts.values().max().unwrap()) - dbg!(template.counts.values().min().unwrap()))
-        as usize
+    template.counts.values().max().unwrap() - template.counts.values().min().unwrap()
 }
 
 fn apply_rules(template: &mut Polymer, rules: &Rules) {
