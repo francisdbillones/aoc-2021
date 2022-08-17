@@ -74,6 +74,54 @@ impl OperatorPacket {
             _ => panic!("Invalid self.type_id"),
         }
     }
+
+    fn subpackets_from_bit_count(bit_count: usize, bits: &BitSlice) -> Vec<Packet> {
+        let mut cursor = 0;
+        let mut subpackets = Vec::new();
+
+        loop {
+            let packet = Packet::from(&bits[7 + 15 + cursor..]);
+
+            match &packet {
+                Packet::Literal(packet) => {
+                    cursor += packet.bit_count;
+                }
+                Packet::Operator(packet) => {
+                    cursor += packet.bit_count;
+                }
+            }
+
+            subpackets.push(packet);
+
+            if cursor == bit_count {
+                break;
+            }
+        }
+
+        subpackets
+    }
+
+    fn subpackets_from_subpacket_count(count: usize, bits: &BitSlice) -> Vec<Packet> {
+        let mut cursor = 0;
+        let mut subpackets = Vec::new();
+
+        for _ in 0..count {
+            let packet = Packet::from(&bits[7 + 11 + cursor..]);
+
+            match &packet {
+                Packet::Literal(packet) => {
+                    cursor += packet.bit_count;
+                }
+                Packet::Operator(packet) => {
+                    cursor += packet.bit_count;
+                }
+            }
+
+            subpackets.push(packet);
+        }
+
+        subpackets
+    }
 }
 
 impl From<&BitSlice> for OperatorPacket {
@@ -83,57 +131,21 @@ impl From<&BitSlice> for OperatorPacket {
         let length_type_id = bits[6] as usize;
         let subpacket_metadata = get_usize(&bits[7..7 + [15, 11][length_type_id]]) as u16;
 
-        let mut bit_count: usize = 7 + [15, 11][length_type_id];
-
-        let mut subpackets: Vec<Packet> = Vec::new();
-
-        if length_type_id == 0 {
-            let subpacket_bit_count = get_usize(&bits[7..7 + 15]);
-
-            let mut cursor = 0;
-
-            loop {
-                let packet = Packet::from(&bits[7 + 15 + cursor..]);
-
-                match &packet {
-                    Packet::Literal(packet) => {
-                        cursor += packet.bit_count;
-                        bit_count += packet.bit_count;
-                    }
-                    Packet::Operator(packet) => {
-                        cursor += packet.bit_count;
-                        bit_count += packet.bit_count;
-                    }
-                }
-
-                subpackets.push(packet);
-
-                if cursor == subpacket_bit_count {
-                    break;
-                }
-            }
+        let subpackets = if length_type_id == 0 {
+            OperatorPacket::subpackets_from_bit_count(subpacket_metadata as usize, bits)
         } else {
-            let num_subpackets = get_usize(&bits[7..7 + 11]) as u16;
+            OperatorPacket::subpackets_from_subpacket_count(subpacket_metadata as usize, bits)
+        };
 
-            let mut cursor = 0;
-
-            for _ in 0..num_subpackets {
-                let packet = Packet::from(&bits[7 + 11 + cursor..]);
-
-                match &packet {
-                    Packet::Literal(packet) => {
-                        cursor += packet.bit_count;
-                        bit_count += packet.bit_count;
-                    }
-                    Packet::Operator(packet) => {
-                        cursor += packet.bit_count;
-                        bit_count += packet.bit_count;
-                    }
-                }
-
-                subpackets.push(packet);
-            }
-        }
+        let bit_count: usize = 7
+            + [15, 11][length_type_id]
+            + subpackets
+                .iter()
+                .map(|sp| match sp {
+                    Packet::Literal(packet) => packet.bit_count,
+                    Packet::Operator(packet) => packet.bit_count,
+                })
+                .sum::<usize>();
 
         OperatorPacket {
             version,
